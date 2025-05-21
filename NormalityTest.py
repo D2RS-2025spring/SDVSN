@@ -142,3 +142,54 @@ def auto_outlier_detection(df, sample_column):
                 else:
                     break
     return results
+
+# 主程序
+def main():
+    print("欢迎使用正态性检验与异常值判别工具 - NormalityAndOutlierDetection")
+    file_path = load_excel_file()  # 加载Excel文件
+    if not file_path:
+        return None
+    try:
+        df = pd.read_excel(file_path)  # 读取Excel文件内容
+        print("文件加载成功！")
+    except Exception as e:
+        print(f"加载文件时出错：{e}")
+        return None
+
+    df = clean_data(df)  # 清洗数据
+    print("数据清洗完成！")
+
+    normality_results = normality_test(df)  # 进行正态性检验
+    print("正态性检验结果：")
+    for col, stats in normality_results.items():
+        print(f"{col}: Skewness={stats['Skewness']:.4f}, Kurtosis={stats['Kurtosis']:.4f}, "
+              f"Normal={stats['Normal']}")
+
+    # 假设单位信息存储在一个字典中
+    units = {'pH': '无', '砷': 'mg/L', '汞': 'mg/L', '硒': 'mg/L', '铍': 'mg/L',
+             '钒': 'mg/L', '锰': 'mg/L', '钴': 'mg/L', '锑': 'mg/L', '镍': 'mg/L',
+             '铬': 'mg/L', '铜': 'mg/L', '锌': 'mg/L', '镉': 'mg/L', '铅': 'mg/L'}
+
+    for col, stats in normality_results.items():
+        if not stats['Normal']:  # 如果数据不是正态分布，绘制箱线图
+            plot_boxplot(df, col, unit=units.get(col, '无'))
+
+    root = Tk()
+    root.withdraw()  # 隐藏主窗口
+    sample_column = simpledialog.askstring("输入", "请输入样品名称列的名称：", parent=root)
+    if not sample_column:
+        messagebox.showinfo("提示", "未输入样品名称列，程序将退出。")
+        return None
+
+    outlier_results = auto_outlier_detection(df.copy(), sample_column)  # 自动进行异常值判别
+    print("异常值判别结果：")
+    for col, outliers in outlier_results.items():
+        for outlier in outliers:
+            sample_name = df.loc[outlier, sample_column]  # 获取样品名称
+            print(f"{col} 异常值索引：{outlier}, 样品名称：{sample_name}")
+            normality_results[col]['Outliers'].append(sample_name)  # 将异常值记录到结果中
+
+    return normality_results  # 返回正态性检验和异常值结果
+
+if __name__ == "__main__":
+    main()
