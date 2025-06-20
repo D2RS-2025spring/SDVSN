@@ -3,7 +3,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import stats
-from tkinter import Tk, filedialog, messagebox, simpledialog
+import os
+
 from scipy.stats import skew, kurtosis
 
 # 设置字体为黑体
@@ -45,15 +46,13 @@ plt.rcParams['font.sans-serif'] = ['SimHei']  # 使用黑体
 plt.rcParams['axes.unicode_minus'] = False  # 正常显示负号
 
 # 定义函数：加载用户选择的Excel文件
-def load_excel_file():
-    root = Tk()
-    root.withdraw()  # 隐藏主窗口
-    file_path = filedialog.askopenfilename(
-        title="选择清洗后的文件",
-        filetypes=[("Excel文件", "*.xlsx *.xls"), ("所有文件", "*.*")]
-    )
-    if not file_path:  # 如果用户未选择文件
-        messagebox.showinfo("提示", "未选择文件，程序将退出。")
+def load_excel_file(default_file_path="SDVSN/example.xlsx"):
+    user_input = input(f"请输入Excel文件路径 (默认为 {default_file_path}): ").strip()
+    
+    file_path = user_input if user_input else default_file_path
+    
+    if not os.path.exists(file_path):
+        print(f"错误: 文件 '{file_path}' 不存在。请提供一个有效的文件路径。")
         return None
     return file_path
 
@@ -148,12 +147,13 @@ def main():
     print("欢迎使用正态性检验与异常值判别工具 - NormalityAndOutlierDetection")
     file_path = load_excel_file()  # 加载Excel文件
     if not file_path:
+        print("未选择文件，程序将退出。") # Added this print statement for consistency
         return None
     try:
         df = pd.read_excel(file_path)  # 读取Excel文件内容
         print("文件加载成功！")
     except Exception as e:
-        print(f"加载文件时出错：{e}")
+        print(f"错误: 加载文件时出错：{e}") # Changed to "错误" for consistency
         return None
 
     df = clean_data(df)  # 清洗数据
@@ -174,11 +174,9 @@ def main():
         if not stats['Normal']:  # 如果数据不是正态分布，绘制箱线图
             plot_boxplot(df, col, unit=units.get(col, '无'))
 
-    root = Tk()
-    root.withdraw()  # 隐藏主窗口
-    sample_column = simpledialog.askstring("输入", "请输入样品名称列的名称：", parent=root)
+    sample_column = input("请输入样品名称列的名称：").strip()
     if not sample_column:
-        messagebox.showinfo("提示", "未输入样品名称列，程序将退出。")
+        print("未输入样品名称列，程序将退出。")
         return None
 
     outlier_results = auto_outlier_detection(df.copy(), sample_column)  # 自动进行异常值判别
